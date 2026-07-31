@@ -1,0 +1,259 @@
+import type { TimestampFields } from './common.types.js';
+import type { ICategory } from './category.types.js';
+import type { ICollection } from './collection.types.js';
+import type { IProduct } from './product.types.js';
+
+/** Versioned, admin-configurable storefront settings. */
+
+/** A call-to-action button (label + link). */
+export interface ICta {
+  label: string;
+  href: string;
+}
+
+/** Horizontal alignment for text-based blocks. */
+export type BlockAlignment = 'left' | 'center' | 'right';
+
+/**
+ * Per-viewport banner image (R2 media keys).
+ * `desktop` is the base/fallback; `tablet` and `mobile` are optional and, when
+ * absent, fall back to `desktop`. Rendered via a `<picture>` element so each
+ * viewport can be served a differently-cropped image (art direction).
+ */
+export interface ResponsiveImage {
+  desktop?: string;
+  tablet?: string;
+  mobile?: string;
+}
+
+// ---------- Hero (singleton — NOT a block) ----------
+
+export interface IHeroSlide {
+  id: string;
+  enabled: boolean;
+  heading?: string;
+  subheading?: string;
+  badge?: string;
+  image?: ResponsiveImage;
+  /** Optional link when the slide background image is clicked. */
+  imageHref?: string;
+  alignment: BlockAlignment;
+  primaryCta?: ICta;
+  secondaryCta?: ICta;
+}
+
+export interface IHeroConfig {
+  version: 1;
+  slides: IHeroSlide[];
+  autoplay: boolean;
+  intervalMs: number;
+}
+
+// ---------- Block config shapes ----------
+
+export type ShowcaseLayout = 'grid' | 'carousel';
+
+export interface ICategoryShowcaseConfig {
+  title?: string;
+  subtitle?: string;
+  /** Explicitly curated & ordered category ids. Empty => auto (top active categories). */
+  categoryIds: string[];
+  layout: ShowcaseLayout;
+}
+
+export interface ICollectionShowcaseConfig {
+  title?: string;
+  subtitle?: string;
+  /** Explicitly curated & ordered collection ids. Empty => featured collections. */
+  collectionIds: string[];
+  layout: ShowcaseLayout;
+}
+
+export interface IFeaturedProductsConfig {
+  title?: string;
+  subtitle?: string;
+  /** Explicitly curated & ordered product ids. Empty => featured products. */
+  productIds: string[];
+  layout: ShowcaseLayout;
+}
+
+export type VideoProvider = 'instagram' | 'facebook' | 'youtube';
+
+export interface IVideoEmbedItem {
+  provider: VideoProvider;
+  url: string;
+  caption?: string;
+}
+
+export interface IVideoEmbedConfig {
+  title?: string;
+  subtitle?: string;
+  videos: IVideoEmbedItem[];
+}
+
+/**
+ * A pure image banner. It has NO text/CTA — just a per-viewport image and an
+ * optional link. Rendered at its natural aspect ratio (height adapts to the
+ * image) so banners of slightly different sizes are not stretched or cropped.
+ */
+export interface IBannerConfig {
+  image?: ResponsiveImage;
+  href?: string;
+  alt?: string;
+}
+
+/** One tile in a 4-image promotional mosaic. */
+export interface IImageMosaicItem {
+  image?: ResponsiveImage;
+  title?: string;
+  badge?: string;
+  href?: string;
+  alt?: string;
+}
+
+export interface IImageMosaicConfig {
+  /** Always exactly 4 tiles (tall L, landscape top, landscape bottom, tall R). */
+  items: IImageMosaicItem[];
+}
+
+/** One logo in a trusted-by / logo marquee strip. */
+export interface ILogoMarqueeItem {
+  /** Logo for light backgrounds (R2 media key). */
+  imageKey?: string;
+  /** Optional logo for dark backgrounds; when absent, light logo is inverted. */
+  imageKeyDark?: string;
+  href?: string;
+  alt?: string;
+}
+
+export interface ILogoMarqueeConfig {
+  title?: string;
+  items: ILogoMarqueeItem[];
+}
+
+// ---------- Discriminated block union ----------
+
+interface IBlockBase {
+  /** Stable id, generated client-side (crypto.randomUUID) when a block is added. */
+  id: string;
+  version: 1;
+  enabled: boolean;
+}
+
+export interface ICategoryShowcaseBlock extends IBlockBase {
+  type: 'categoryShowcase';
+  config: ICategoryShowcaseConfig;
+}
+export interface ICollectionShowcaseBlock extends IBlockBase {
+  type: 'collectionShowcase';
+  config: ICollectionShowcaseConfig;
+}
+export interface IFeaturedProductsBlock extends IBlockBase {
+  type: 'featuredProducts';
+  config: IFeaturedProductsConfig;
+}
+export interface IVideoEmbedBlock extends IBlockBase {
+  type: 'videoEmbed';
+  config: IVideoEmbedConfig;
+}
+export interface IBannerBlock extends IBlockBase {
+  type: 'banner';
+  config: IBannerConfig;
+}
+export interface IImageMosaicBlock extends IBlockBase {
+  type: 'imageMosaic';
+  config: IImageMosaicConfig;
+}
+export interface ILogoMarqueeBlock extends IBlockBase {
+  type: 'logoMarquee';
+  config: ILogoMarqueeConfig;
+}
+
+export type IHomepageBlock =
+  | ICategoryShowcaseBlock
+  | ICollectionShowcaseBlock
+  | IFeaturedProductsBlock
+  | IVideoEmbedBlock
+  | IBannerBlock
+  | IImageMosaicBlock
+  | ILogoMarqueeBlock;
+
+export type BlockType = IHomepageBlock['type'];
+
+// ---------- Announcement bar ----------
+
+export type AnnouncementTone = 'default' | 'promo' | 'info' | 'warning';
+export type AnnouncementMode = 'simple' | 'typewriter';
+
+/** A global, dismissible top-of-site message (not a block). */
+export interface IAnnouncementBar {
+  version: 1;
+  enabled: boolean;
+  mode: AnnouncementMode;
+  messages: string[];
+  linkText?: string;
+  linkHref?: string;
+  tone: AnnouncementTone;
+}
+
+// ---------- Product page ----------
+
+export interface IEstimatedDeliveryConfig {
+  enabled: boolean;
+  minDays: number;
+  maxDays: number;
+}
+
+export interface IProductPageBadges {
+  easyReturn: boolean;
+  easyReplacement: boolean;
+  cod: boolean;
+  freeDelivery: boolean;
+  authentic: boolean;
+}
+
+export interface IProductInfoBlock {
+  content?: string;
+  linkText?: string;
+  linkHref?: string;
+}
+
+export interface IProductPageConfig {
+  version: 2;
+  estimatedDelivery: IEstimatedDeliveryConfig;
+  badges: IProductPageBadges;
+  returnAndExchange: IProductInfoBlock;
+  shippingInformation: IProductInfoBlock;
+  sellerInformation: IProductInfoBlock;
+}
+
+// ---------- Site settings ----------
+
+export interface ISiteSettings extends Partial<TimestampFields> {
+  schemaVersion: 3;
+  hero: IHeroConfig;
+  homepageBlocks: IHomepageBlock[];
+  announcementBar: IAnnouncementBar;
+  productPage: IProductPageConfig;
+}
+
+// ---------- Hydrated (storefront) ----------
+
+/**
+ * Storefront variant: showcase blocks have their curated ids resolved into the
+ * actual (ordered, visibility-filtered) documents by the server. Hero and the
+ * announcement bar are fetched via their own dedicated endpoints.
+ */
+export type IHydratedHomepageBlock =
+  | (ICategoryShowcaseBlock & { resolved: ICategory[] })
+  | (ICollectionShowcaseBlock & { resolved: ICollection[] })
+  | (IFeaturedProductsBlock & { resolved: IProduct[] })
+  | IVideoEmbedBlock
+  | IBannerBlock
+  | IImageMosaicBlock
+  | ILogoMarqueeBlock;
+
+export interface IHydratedSiteSettings {
+  homepageBlocks: IHydratedHomepageBlock[];
+  announcementBar: IAnnouncementBar;
+}
